@@ -6,17 +6,44 @@ html, body {
   font-family: system-ui, sans-serif;
 }
 
-#pond {
+canvas {
   display: block;
 }
 
-#ui {
+#startScreen {
   position: fixed;
-  top: 12px;
-  left: 12px;
+  inset: 0;
+  background: rgba(5, 20, 30, 0.95);
   color: #e6f7ff;
-  background: rgba(0,0,0,0.25);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+  z-index: 10;
+}
+
+#startScreen h1 {
+  margin-bottom: 20px;
+}
+
+#startScreen ul {
+  text-align: left;
+  max-width: 500px;
+}
+
+#startScreen button {
+  margin-top: 30px;
+  padding: 12px 28px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.fade {
+  animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
 }
