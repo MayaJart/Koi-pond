@@ -1,0 +1,22 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0b4f6c;
+  font-family: system-ui, sans-serif;
+}
+
+#pond {
+  display: block;
+}
+
+#ui {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  color: #e6f7ff;
+  background: rgba(0,0,0,0.25);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
