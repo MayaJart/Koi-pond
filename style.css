@@ -24,13 +24,9 @@ canvas {
   z-index: 10;
 }
 
-#startScreen h1 {
-  margin-bottom: 20px;
-}
-
 #startScreen ul {
   text-align: left;
-  max-width: 500px;
+  max-width: 520px;
 }
 
 #startScreen button {
