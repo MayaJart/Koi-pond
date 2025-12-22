@@ -3,9 +3,23 @@ const ctx = canvas.getContext("2d");
 const startScreen = document.getElementById("startScreen");
 const music = document.getElementById("music");
 
-let running = false;
+/* ---------- MUSIC ---------- */
+const tracks = [
+  "music/music1.mp3",
+  "music/music2.mp3",
+  "music/music3.mp3"
+];
+
+let currentTrack = 0;
 let muted = false;
 
+music.onended = () => {
+  currentTrack = (currentTrack + 1) % tracks.length;
+  music.src = tracks[currentTrack];
+  music.play();
+};
+
+/* ---------- CANVAS ---------- */
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -33,9 +47,12 @@ window.addEventListener("keydown", e => {
 });
 
 /* ---------- GAME STATE ---------- */
-let score, player, fish;
+let running = false;
+let score = 0;
+let player;
+let fish = [];
 
-/* ---------- START / RESET ---------- */
+/* ---------- START / END ---------- */
 function startGame() {
   startScreen.style.display = "none";
   score = 0;
@@ -49,6 +66,8 @@ function startGame() {
   fish = [];
   for (let i = 0; i < 12; i++) spawnFish();
 
+  currentTrack = Math.floor(Math.random() * tracks.length);
+  music.src = tracks[currentTrack];
   music.volume = 0.4;
   music.play();
 
@@ -88,11 +107,11 @@ function update() {
   const speed = dashing ? 4 : 1.8;
 
   if (dist > 1) {
-    player.x += dx / dist * speed;
-    player.y += dy / dist * speed;
+    player.x += (dx / dist) * speed;
+    player.y += (dy / dist) * speed;
   }
 
-  // Fish behavior
+  // Fish
   for (let i = fish.length - 1; i >= 0; i--) {
     const f = fish[i];
     f.x += Math.cos(f.angle) * f.speed;
@@ -100,13 +119,11 @@ function update() {
 
     if (Math.random() < 0.01) f.angle += (Math.random() - 0.5);
 
-    // Wrap
     if (f.x < 0) f.x = canvas.width;
     if (f.y < 0) f.y = canvas.height;
     if (f.x > canvas.width) f.x = 0;
     if (f.y > canvas.height) f.y = 0;
 
-    // Collision
     const d = Math.hypot(player.x - f.x, player.y - f.y);
     if (d < player.size + f.size) {
       if (player.size > f.size) {
@@ -126,7 +143,7 @@ function draw() {
   ctx.fillStyle = "#0b4f6c";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Fish
+  // Dull fish
   ctx.fillStyle = "#4b3b2a";
   fish.forEach(f => {
     ctx.beginPath();
