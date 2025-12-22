@@ -1,5 +1,10 @@
 const canvas = document.getElementById("pond");
 const ctx = canvas.getContext("2d");
+const startScreen = document.getElementById("startScreen");
+const music = document.getElementById("music");
+
+let running = false;
+let muted = false;
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -8,105 +13,138 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-// ----- Score -----
-let score = 0;
-let highScore = Number(localStorage.getItem("highScore") || 0);
-document.getElementById("high").textContent = highScore;
-
-setInterval(() => {
-  score++;
-  document.getElementById("score").textContent = score;
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("highScore", highScore);
-    document.getElementById("high").textContent = highScore;
-  }
-}, 1000);
-
-// ----- Mouse influence -----
+/* ---------- INPUT ---------- */
 const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+let dashing = false;
+
 window.addEventListener("mousemove", e => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
 });
 
-// ----- Fish -----
-const fishCount = 8;
-const fish = [];
+window.addEventListener("mousedown", () => dashing = true);
+window.addEventListener("mouseup", () => dashing = false);
 
-for (let i = 0; i < fishCount; i++) {
+window.addEventListener("keydown", e => {
+  if (e.key.toLowerCase() === "m") {
+    muted = !muted;
+    music.muted = muted;
+  }
+});
+
+/* ---------- GAME STATE ---------- */
+let score, player, fish;
+
+/* ---------- START / RESET ---------- */
+function startGame() {
+  startScreen.style.display = "none";
+  score = 0;
+
+  player = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    size: 12
+  };
+
+  fish = [];
+  for (let i = 0; i < 12; i++) spawnFish();
+
+  music.volume = 0.4;
+  music.play();
+
+  running = true;
+  loop();
+}
+
+function endGame() {
+  running = false;
+  startScreen.classList.add("fade");
+
+  setTimeout(() => {
+    startScreen.classList.remove("fade");
+    startScreen.style.display = "flex";
+  }, 2000);
+}
+
+/* ---------- FISH ---------- */
+function spawnFish() {
   fish.push({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
+    size: 8 + Math.random() * 20,
     angle: Math.random() * Math.PI * 2,
-    speed: 0.4 + Math.random() * 0.6,
-    size: 10 + Math.random() * 6
+    speed: 0.4 + Math.random() * 0.6
   });
 }
 
-function updateFish(f) {
-  // gentle drift
-  f.angle += (Math.random() - 0.5) * 0.02;
+/* ---------- UPDATE ---------- */
+function update() {
+  if (!running) return;
 
-  // slight mouse attraction
-  const dx = mouse.x - f.x;
-  const dy = mouse.y - f.y;
+  // Player movement
+  const dx = mouse.x - player.x;
+  const dy = mouse.y - player.y;
   const dist = Math.hypot(dx, dy);
-  if (dist < 200) {
-    const target = Math.atan2(dy, dx);
-    f.angle += (target - f.angle) * 0.002;
+  const speed = dashing ? 4 : 1.8;
+
+  if (dist > 1) {
+    player.x += dx / dist * speed;
+    player.y += dy / dist * speed;
   }
 
-  f.x += Math.cos(f.angle) * f.speed;
-  f.y += Math.sin(f.angle) * f.speed;
+  // Fish behavior
+  for (let i = fish.length - 1; i >= 0; i--) {
+    const f = fish[i];
+    f.x += Math.cos(f.angle) * f.speed;
+    f.y += Math.sin(f.angle) * f.speed;
 
-  // wrap edges
-  if (f.x < -20) f.x = canvas.width + 20;
-  if (f.y < -20) f.y = canvas.height + 20;
-  if (f.x > canvas.width + 20) f.x = -20;
-  if (f.y > canvas.height + 20) f.y = -20;
+    if (Math.random() < 0.01) f.angle += (Math.random() - 0.5);
+
+    // Wrap
+    if (f.x < 0) f.x = canvas.width;
+    if (f.y < 0) f.y = canvas.height;
+    if (f.x > canvas.width) f.x = 0;
+    if (f.y > canvas.height) f.y = 0;
+
+    // Collision
+    const d = Math.hypot(player.x - f.x, player.y - f.y);
+    if (d < player.size + f.size) {
+      if (player.size > f.size) {
+        player.size += 1;
+        score++;
+        fish.splice(i, 1);
+        spawnFish();
+      } else {
+        endGame();
+      }
+    }
+  }
 }
 
-function drawFish(f) {
-  ctx.save();
-  ctx.translate(f.x, f.y);
-  ctx.rotate(f.angle);
-  ctx.fillStyle = "#ffefe0";
-  ctx.beginPath();
-  ctx.ellipse(0, 0, f.size * 1.6, f.size, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-// ----- Water -----
-let t = 0;
-function drawWater() {
-  const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  g.addColorStop(0, "#1bb6d8");
-  g.addColorStop(1, "#0b4f6c");
-  ctx.fillStyle = g;
+/* ---------- DRAW ---------- */
+function draw() {
+  ctx.fillStyle = "#0b4f6c";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.globalAlpha = 0.25;
-  ctx.strokeStyle = "rgba(255,255,255,0.5)";
-  ctx.lineWidth = 1;
-  for (let y = 0; y < canvas.height; y += 40) {
+  // Fish
+  ctx.fillStyle = "#4b3b2a";
+  fish.forEach(f => {
     ctx.beginPath();
-    for (let x = 0; x <= canvas.width; x += 20) {
-      const wave = Math.sin(x * 0.02 + t) * 4;
-      ctx.lineTo(x, y + wave);
-    }
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Player koi
+  ctx.fillStyle = "#ffefe0";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+  ctx.fill();
 }
 
-// ----- Loop -----
+/* ---------- LOOP ---------- */
 function loop() {
-  t += 0.01;
-  drawWater();
-  fish.forEach(updateFish);
-  fish.forEach(drawFish);
+  if (!running) return;
+  update();
+  draw();
   requestAnimationFrame(loop);
 }
-loop();
