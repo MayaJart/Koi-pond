@@ -1,17 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Koi Pond</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>Koi Pond</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="pond"></canvas>
-  <div id="ui">
-    <div>Score: <span id="score">0</span></div>
-    <div>High Score: <span id="high">0</span></div>
-  </div>
 
-  <script src="game.js"></script>
+<div id="startScreen">
+  <h1>✿⊰ How to Play ⊱✿</h1>
+  <p>You are a koi fish. Move your mouse and the fish will follow.</p>
+  <ul>
+    <li>✓ Eat smaller dull-colored fish to grow</li>
+    <li>✗ Avoid larger fish or you’ll be eaten</li>
+    <li>Other koi cannot eat you or be eaten</li>
+    <li>Dull fish can hide or spawn near lily pads</li>
+    <li>Click & hold to dash</li>
+    <li>Press <b>M</b> to mute/unmute music</li>
+  </ul>
+  <button onclick="startGame()">Start</button>
+</div>
+
+<canvas id="pond"></canvas>
+
+<audio id="music" src="music.mp3" loop></audio>
+
+<script src="game.js"></script>
 </body>
 </html>
