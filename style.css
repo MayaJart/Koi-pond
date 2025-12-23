@@ -3,43 +3,8 @@ html, body {
   padding: 0;
   overflow: hidden;
   background: #0b4f6c;
-  font-family: system-ui, sans-serif;
 }
 
 canvas {
   display: block;
-}
-
-#startScreen {
-  position: fixed;
-  inset: 0;
-  background: rgba(5, 20, 30, 0.95);
-  color: #e6f7ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 40px;
-  z-index: 10;
-}
-
-#startScreen ul {
-  text-align: left;
-  max-width: 520px;
-}
-
-#startScreen button {
-  margin-top: 30px;
-  padding: 12px 28px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.fade {
-  animation: fadeOut 2s forwards;
-}
-
-@keyframes fadeOut {
-  to { opacity: 0; }
 }
