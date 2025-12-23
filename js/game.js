@@ -1,25 +1,7 @@
-const canvas = document.getElementById("pond");
+// ---------- CANVAS ----------
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const startScreen = document.getElementById("startScreen");
-const music = document.getElementById("music");
 
-/* ---------- MUSIC ---------- */
-const tracks = [
-  "music/music1.mp3",
-  "music/music2.mp3",
-  "music/music3.mp3"
-];
-
-let currentTrack = 0;
-let muted = false;
-
-music.onended = () => {
-  currentTrack = (currentTrack + 1) % tracks.length;
-  music.src = tracks[currentTrack];
-  music.play();
-};
-
-/* ---------- CANVAS ---------- */
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -27,141 +9,112 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-/* ---------- INPUT ---------- */
-const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
-let dashing = false;
+// ---------- MUSIC ----------
+const music = document.getElementById("music");
+const tracks = [
+  "assets/audio/music1.mp3",
+  "assets/audio/music2.mp3",
+  "assets/audio/music3.mp3"
+];
+let currentTrack = Math.floor(Math.random() * tracks.length);
+music.src = tracks[currentTrack];
+music.volume = 0.4;
+music.play();
 
+music.onended = () => {
+  currentTrack = (currentTrack + 1) % tracks.length;
+  music.src = tracks[currentTrack];
+  music.play();
+};
+
+// ---------- INPUT ----------
+const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 window.addEventListener("mousemove", e => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
 });
 
-window.addEventListener("mousedown", () => dashing = true);
-window.addEventListener("mouseup", () => dashing = false);
+// ---------- PLAYER SPRITES ----------
+const playerFrames = [
+  new Image(), // left
+  new Image(), // straight
+  new Image()  // right
+];
 
-window.addEventListener("keydown", e => {
-  if (e.key.toLowerCase() === "m") {
-    muted = !muted;
-    music.muted = muted;
-  }
-});
+playerFrames[0].src = "assets/sprites/player/Kohaku 1.png";
+playerFrames[1].src = "assets/sprites/player/Kohaku 2.png";
+playerFrames[2].src = "assets/sprites/player/Kohaku 3.png";
 
-/* ---------- GAME STATE ---------- */
-let running = false;
-let score = 0;
-let player;
-let fish = [];
+// ---------- PLAYER ----------
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  size: 28,
+  angle: 0,
+  frameIndex: 1,
+  frameTimer: 0
+};
 
-/* ---------- START / END ---------- */
-function startGame() {
-  startScreen.style.display = "none";
-  score = 0;
-
-  player = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    size: 12
-  };
-
-  fish = [];
-  for (let i = 0; i < 12; i++) spawnFish();
-
-  currentTrack = Math.floor(Math.random() * tracks.length);
-  music.src = tracks[currentTrack];
-  music.volume = 0.4;
-  music.play();
-
-  running = true;
-  loop();
-}
-
-function endGame() {
-  running = false;
-  startScreen.classList.add("fade");
-
-  setTimeout(() => {
-    startScreen.classList.remove("fade");
-    startScreen.style.display = "flex";
-  }, 2000);
-}
-
-/* ---------- FISH ---------- */
-function spawnFish() {
-  fish.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: 8 + Math.random() * 20,
-    angle: Math.random() * Math.PI * 2,
-    speed: 0.4 + Math.random() * 0.6
-  });
-}
-
-/* ---------- UPDATE ---------- */
+// ---------- UPDATE ----------
 function update() {
-  if (!running) return;
-
-  // Player movement
   const dx = mouse.x - player.x;
   const dy = mouse.y - player.y;
   const dist = Math.hypot(dx, dy);
-  const speed = dashing ? 4 : 1.8;
 
   if (dist > 1) {
-    player.x += (dx / dist) * speed;
-    player.y += (dy / dist) * speed;
+    player.x += (dx / dist) * 2;
+    player.y += (dy / dist) * 2;
+    player.angle = Math.atan2(dy, dx);
   }
 
-  // Fish
-  for (let i = fish.length - 1; i >= 0; i--) {
-    const f = fish[i];
-    f.x += Math.cos(f.angle) * f.speed;
-    f.y += Math.sin(f.angle) * f.speed;
-
-    if (Math.random() < 0.01) f.angle += (Math.random() - 0.5);
-
-    if (f.x < 0) f.x = canvas.width;
-    if (f.y < 0) f.y = canvas.height;
-    if (f.x > canvas.width) f.x = 0;
-    if (f.y > canvas.height) f.y = 0;
-
-    const d = Math.hypot(player.x - f.x, player.y - f.y);
-    if (d < player.size + f.size) {
-      if (player.size > f.size) {
-        player.size += 1;
-        score++;
-        fish.splice(i, 1);
-        spawnFish();
-      } else {
-        endGame();
-      }
-    }
+  // swim animation: left → straight → right → straight
+  player.frameTimer++;
+  if (player.frameTimer > 10) {
+    player.frameIndex = (player.frameIndex + 1) % 3;
+    player.frameTimer = 0;
   }
 }
 
-/* ---------- DRAW ---------- */
+// ---------- DRAW ----------
+function drawPlayer() {
+  const img = playerFrames[player.frameIndex];
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.angle);
+  ctx.drawImage(
+    img,
+    -player.size,
+    -player.size,
+    player.size * 2,
+    player.size * 2
+  );
+  ctx.restore();
+}
+
+function drawFog() {
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, 160, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+}
+
 function draw() {
   ctx.fillStyle = "#0b4f6c";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Dull fish
-  ctx.fillStyle = "#4b3b2a";
-  fish.forEach(f => {
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Player koi
-  ctx.fillStyle = "#ffefe0";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
+  drawPlayer();
+  drawFog();
 }
 
-/* ---------- LOOP ---------- */
+// ---------- LOOP ----------
 function loop() {
-  if (!running) return;
   update();
   draw();
   requestAnimationFrame(loop);
 }
+
+loop();
